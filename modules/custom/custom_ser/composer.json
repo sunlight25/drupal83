@@ -1,0 +1,14 @@
+{
+  "name": "drupal/custom_ser",
+  "type": "drupal-module",
+  "description": "MY Custom module",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/custom_ser",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/custom_ser",
+    "source": "http://cgit.drupalcode.org/custom_ser"
+  },
+  "require": { }
+}

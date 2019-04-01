@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Contains custom_ser.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\custom_ser\Services\CustomServiceMe;
+
+/**
+ * Implements hook_help().
+ */
+function custom_ser_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the custom_ser module.
+    case 'help.page.custom_ser':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('MY Custom module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function custom_ser_theme() {
+  return [
+    'custom_ser' => [
+      'render element' => 'children',
+    ],
+    'my_awesome_form' => [
+      'render element' => 'form',
+    ],
+    'ws_custom_block' => [
+            'variables' => ['title' => NULL, 'description' => NULL],
+            'template' => 'block--ws-custom',
+        ],    
+  ];
+}
+
+function custom_ser_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  //$test = CustomServiceMe::Drupalise();
+ //print_r($test); exit;
+}

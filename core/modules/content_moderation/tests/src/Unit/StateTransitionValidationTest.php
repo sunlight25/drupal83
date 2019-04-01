@@ -7,8 +7,10 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\content_moderation\StateTransitionValidation;
+use Drupal\Tests\UnitTestCase;
+use Drupal\workflow_type_test\Plugin\WorkflowType\TestType;
 use Drupal\workflows\Entity\Workflow;
-use Drupal\workflows\WorkflowTypeInterface;
+use Drupal\workflows\State;
 use Drupal\workflows\WorkflowTypeManager;
 use Prophecy\Argument;
 
@@ -16,7 +18,39 @@ use Prophecy\Argument;
  * @coversDefaultClass \Drupal\content_moderation\StateTransitionValidation
  * @group content_moderation
  */
-class StateTransitionValidationTest extends \PHPUnit_Framework_TestCase {
+class StateTransitionValidationTest extends UnitTestCase {
+
+  /**
+   * A test workflow.
+   *
+   * @var \Drupal\workflows\WorkflowInterface
+   */
+  protected $workflow;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+
+    // Create a container so that the plugin manager and workflow type can be
+    // mocked.
+    $container = new ContainerBuilder();
+    $workflow_manager = $this->prophesize(WorkflowTypeManager::class);
+    $workflow_manager->createInstance('content_moderation', Argument::any())->willReturn(new TestType([], '', []));
+    $container->set('plugin.manager.workflows.type', $workflow_manager->reveal());
+    \Drupal::setContainer($container);
+
+    $this->workflow = new Workflow(['id' => 'process', 'type' => 'content_moderation'], 'workflow');
+    $this->workflow
+      ->getTypePlugin()
+      ->addState('draft', 'draft')
+      ->addState('needs_review', 'needs_review')
+      ->addState('published', 'published')
+      ->addTransition('draft', 'draft', ['draft'], 'draft')
+      ->addTransition('review', 'review', ['draft'], 'needs_review')
+      ->addTransition('publish', 'publish', ['needs_review', 'published'], 'published');
+  }
 
   /**
    * Verifies user-aware transition validation.
@@ -46,7 +80,10 @@ class StateTransitionValidationTest extends \PHPUnit_Framework_TestCase {
     $entity->moderation_state = new \stdClass();
     $entity->moderation_state->value = $from_id;
 
-    $validator = new StateTransitionValidation($this->setUpModerationInformation($entity));
+    $moderation_info = $this->prophesize(ModerationInformationInterface::class);
+    $moderation_info->getWorkflowForEntity($entity)->willReturn($this->workflow);
+
+    $validator = new StateTransitionValidation($moderation_info->reveal());
     $has_transition = FALSE;
     foreach ($validator->getValidTransitions($entity, $user->reveal()) as $transition) {
       if ($transition->to()->id() === $to_id) {
@@ -57,29 +94,17 @@ class StateTransitionValidationTest extends \PHPUnit_Framework_TestCase {
     $this->assertSame($result, $has_transition);
   }
 
-  protected function setUpModerationInformation(ContentEntityInterface $entity) {
-    // Create a container so that the plugin manager and workflow type can be
-    // mocked.
-    $container = new ContainerBuilder();
-    $workflow_type = $this->prophesize(WorkflowTypeInterface::class);
-    $workflow_type->decorateState(Argument::any())->willReturnArgument(0);
-    $workflow_type->decorateTransition(Argument::any())->willReturnArgument(0);
-    $workflow_manager = $this->prophesize(WorkflowTypeManager::class);
-    $workflow_manager->createInstance('content_moderation', Argument::any())->willReturn($workflow_type->reveal());
-    $container->set('plugin.manager.workflows.type', $workflow_manager->reveal());
-    \Drupal::setContainer($container);
-
-    $workflow = new Workflow(['id' => 'process', 'type' => 'content_moderation'], 'workflow');
-    $workflow
-      ->addState('draft', 'draft')
-      ->addState('needs_review', 'needs_review')
-      ->addState('published', 'published')
-      ->addTransition('draft', 'draft', ['draft'], 'draft')
-      ->addTransition('review', 'review', ['draft'], 'needs_review')
-      ->addTransition('publish', 'publish', ['needs_review', 'published'], 'published');
+  /**
+   * @expectedDeprecation Omitting the $entity parameter from Drupal\content_moderation\StateTransitionValidation::isTransitionValid is deprecated and will be required in Drupal 9.0.0.
+   * @group legacy
+   */
+  public function testDeprecatedEntityParameter() {
     $moderation_info = $this->prophesize(ModerationInformationInterface::class);
-    $moderation_info->getWorkflowForEntity($entity)->willReturn($workflow);
-    return $moderation_info->reveal();
+    $state = new State($this->workflow->getTypePlugin(), 'draft', 'draft');
+    $user = $this->prophesize(AccountInterface::class);
+
+    $validator = new StateTransitionValidation($moderation_info->reveal());
+    $validator->isTransitionValid($this->workflow, $state, $state, $user->reveal());
   }
 
   /**

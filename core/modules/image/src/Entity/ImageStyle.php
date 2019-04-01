@@ -4,6 +4,7 @@ namespace Drupal\image\Entity;
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityWithPluginCollectionInterface;
 use Drupal\Core\Routing\RequestHelper;
@@ -17,12 +18,20 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
+
 /**
  * Defines an image style configuration entity.
  *
  * @ConfigEntityType(
  *   id = "image_style",
  *   label = @Translation("Image style"),
+ *   label_collection = @Translation("Image styles"),
+ *   label_singular = @Translation("image style"),
+ *   label_plural = @Translation("image styles"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count image style",
+ *     plural = "@count image styles",
+ *   ),
  *   handlers = {
  *     "form" = {
  *       "add" = "Drupal\image\Form\ImageStyleAddForm",
@@ -146,7 +155,7 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
           }
         }
       }
-      foreach (EntityViewDisplay::loadMultiple() as $display) {
+      foreach (EntityFormDisplay::loadMultiple() as $display) {
         foreach ($display->getComponents() as $name => $options) {
           if (isset($options['type']) && $options['type'] == 'image_image' && $options['settings']['preview_image_style'] == $style->getOriginalId()) {
             $options['settings']['preview_image_style'] = $style->id();
@@ -274,9 +283,8 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
    * {@inheritdoc}
    */
   public function createDerivative($original_uri, $derivative_uri) {
-
     // If the source file doesn't exist, return FALSE without creating folders.
-    $image = \Drupal::service('image.factory')->get($original_uri);
+    $image = $this->getImageFactory()->get($original_uri);
     if (!$image->isValid()) {
       return FALSE;
     }
@@ -338,6 +346,18 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
     $this->getEffects()->removeInstanceId($effect->getUuid());
     $this->save();
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function supportsUri($uri) {
+    // Only support the URI if its extension is supported by the current image
+    // toolkit.
+    return in_array(
+      mb_strtolower(pathinfo($uri, PATHINFO_EXTENSION)),
+      $this->getImageFactory()->getSupportedExtensions()
+    );
   }
 
   /**
@@ -406,6 +426,16 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
    */
   protected function getImageEffectPluginManager() {
     return \Drupal::service('plugin.manager.image.effect');
+  }
+
+  /**
+   * Returns the image factory.
+   *
+   * @return \Drupal\Core\Image\ImageFactory
+   *   The image factory.
+   */
+  protected function getImageFactory() {
+    return \Drupal::service('image.factory');
   }
 
   /**

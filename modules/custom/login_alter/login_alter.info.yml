@@ -1,0 +1,7 @@
+name: Login Page Alter
+type: module
+description: 'To Alter User Login Form on Different URL'
+package: Custom
+version: 8.x
+core: 8.x
+

@@ -1,0 +1,9 @@
+login_alter.login_alter_configuration_form:
+  path: 'admin/config/login_alter_configuration'
+  defaults:
+    _form: '\Drupal\login_alter\Form\LoginAlterConfigurationForm'
+    _title: 'Login Alter Configuration'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE

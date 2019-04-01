@@ -1,0 +1,6 @@
+login_alter.login_alter_configuration:
+  title: 'Login URL Configuration'
+  parent: system.admin_config
+  description: 'Login Url hierarchy configuration.'
+  route_name: login_alter.login_alter_configuration_form
+  menu_name: system.admin
