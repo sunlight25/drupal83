@@ -1,0 +1,5 @@
+services:
+  login_alter.route_subscriber:
+    class: Drupal\login_alter\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }

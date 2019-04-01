@@ -1,0 +1,8 @@
+<?php
+/**
+ * Implements hook_update_N() on Module custom_ser Update # 8001.
+ */
+function custom_ser_update_8001(&$sandbox) {
+    drupal_set_message('Module custom_ser Update # 8001 () was executed successfully.');
+}
+

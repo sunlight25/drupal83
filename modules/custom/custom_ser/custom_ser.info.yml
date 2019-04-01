@@ -1,0 +1,5 @@
+name: 'custom_ser'
+type: module
+description: 'MY Custom module'
+core: 8.x
+package: 'custom'

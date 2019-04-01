@@ -1,0 +1,7 @@
+services:
+  custom_ser:
+    class: Drupal\custom_ser\Services\CustomServiceMe
+    arguments: ['@database']  
+  custom_ser.default:
+    class: Drupal\custom_ser\DefaultService
+    arguments: ['@database']
